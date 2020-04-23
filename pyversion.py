@@ -6,8 +6,9 @@ from PIL import Image
 import pyphotoclick
 import serial               
 from time import sleep
-import RPi.GPIO as GPIO
-
+#import RPi.GPIO as GPIO
+import speech_recognition as sr 
+import pyttsx3
 
 #Constants
 ID_FILE_PATH = "/home/vardhan/Chandu-Vardhan/Face_Recognition/face_ids.txt"
@@ -143,10 +144,10 @@ def say_it(sent):
     file.close()
 
 
-def setup():
-       GPIO.setmode(GPIO.BOARD)
-       GPIO.setup(button1, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-       GPIO.setup(button2, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+# def setup():
+#        GPIO.setmode(GPIO.BOARD)
+#        GPIO.setup(button1, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+#        GPIO.setup(button2, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
 
 def init_face_id():
@@ -155,6 +156,7 @@ def init_face_id():
     # for i in range(1,5):
     #     path = "/home/vardhan/Chandu-Vardhan/Face_Recognition/faces/source"+str(i)+".jpg"
     #     index_faces("Faces",path)
+    pyphotoclick.click_photo()
     path = SOURCE_IMAGE_PATH
     text = detect_text(path)
     #tes_detect_text(path)
@@ -235,16 +237,34 @@ def convert_to_degrees(raw_value):
     return position
 
 
+
 if __name__ == "__main__":
-    setup()
+    # setup()
+    r = sr.Recognizer()
     while True:
-        button1_state = GPIO.input(button1)
-        button2_state = GPIO.input(button2)
-        if button1_state == False:
-            say_it("Face recognition initiated")
-            init_face_id()
-            say_it("Face recognition complete")
-        elif button2_state == False:
-            say_it("GPS Fix initiated")
-            find_gps_fix()
-            say_it("GPS Fix done")
+        try: 
+            with sr.Microphone() as source2: 
+                r.adjust_for_ambient_noise(source2, duration=0.2) 
+                audio2 = r.listen(source2) 
+                MyText = r.recognize_google(audio2) 
+                MyText = MyText.lower() 
+                print(MyText)
+                if MyText == "face" or MyText == "recognition" or MyText == "rec":
+                    say_it("Face  and text recognition initiated")
+                    init_face_id()
+                    say_it("Face recognition complete")
+                elif MyText == "rec" or MyText == "text" or MyText == "recognition":
+                    say_it("Face and text recognition initiated")
+                    init_face_id()
+                    say_it("Text recognition complete")
+                elif MyText == "gps" or MyText == "navigate" or MyText == "fix":
+                    say_it("GPS Fix initiated")
+                    find_gps_fix()
+                    say_it("GPS Fix done")
+                elif MyText == "stop":
+                    say_it("Terminating Program")
+                    break
+        except sr.RequestError as e: 
+            print("Could not request results; {0}".format(e)) 
+        except sr.UnknownValueError: 
+            print("unknown error occured") 
